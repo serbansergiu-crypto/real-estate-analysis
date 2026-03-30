@@ -1,0 +1,249 @@
+-- ============================================================
+-- FILE 01: SCHEMA & SEED DATA
+-- Project : Global & Romania Real Estate Analysis
+-- Covers  : Global cycles (2000–2026), Romania macro,
+--           Bucharest neighborhood map
+-- Engine  : PostgreSQL 14+
+-- ============================================================
+
+DROP TABLE IF EXISTS bucharest_neighborhoods CASCADE;
+DROP TABLE IF EXISTS romania_city_prices     CASCADE;
+DROP TABLE IF EXISTS romania_annual_data     CASCADE;
+DROP TABLE IF EXISTS global_market_events    CASCADE;
+DROP TABLE IF EXISTS global_price_index      CASCADE;
+DROP TABLE IF EXISTS interest_rates          CASCADE;
+
+-- ============================================================
+-- TABLE 1: global_price_index
+-- Annual house price index per country (2000=100)
+-- ============================================================
+CREATE TABLE global_price_index (
+    id          SERIAL PRIMARY KEY,
+    country     VARCHAR(30) NOT NULL,
+    year        SMALLINT    NOT NULL,
+    hpi         NUMERIC(7,2),           -- index: 2000=100
+    yoy_pct     NUMERIC(6,2),
+    cycle_phase VARCHAR(20),
+    UNIQUE(country, year)
+);
+
+INSERT INTO global_price_index (country, year, hpi, yoy_pct, cycle_phase) VALUES
+-- USA
+('USA',2000,100.0,NULL,'boom'),('USA',2002,105.0,2.5,'boom'),
+('USA',2004,120.0,6.8,'boom'),('USA',2006,155.0,13.5,'peak'),
+('USA',2008,145.0,-6.5,'bust'),('USA',2010,130.0,-5.2,'bust'),
+('USA',2012,135.0,3.8,'recovery'),('USA',2014,155.0,7.4,'recovery'),
+('USA',2016,170.0,4.8,'expansion'),('USA',2018,190.0,5.9,'expansion'),
+('USA',2020,195.0,2.6,'expansion'),('USA',2022,240.0,12.8,'peak'),
+('USA',2024,230.0,-2.1,'cooling'),('USA',2026,235.0,2.2,'stabilising'),
+-- UK
+('UK',2000,100.0,NULL,'boom'),('UK',2004,140.0,8.8,'boom'),
+('UK',2007,175.0,7.7,'peak'),('UK',2009,148.0,-8.0,'bust'),
+('UK',2012,150.0,1.4,'recovery'),('UK',2016,175.0,5.2,'expansion'),
+('UK',2020,188.0,3.2,'expansion'),('UK',2022,220.0,8.5,'peak'),
+('UK',2024,210.0,-2.3,'cooling'),('UK',2026,215.0,2.4,'stabilising'),
+-- Germany
+('Germany',2000,100.0,NULL,'flat'),('Germany',2006,96.0,-0.7,'flat'),
+('Germany',2012,100.0,2.1,'early_boom'),('Germany',2016,120.0,6.1,'boom'),
+('Germany',2020,165.0,8.2,'boom'),('Germany',2022,185.0,6.1,'peak'),
+('Germany',2024,162.0,-6.2,'correction'),('Germany',2026,165.0,1.9,'stabilising'),
+-- Spain
+('Spain',2000,100.0,NULL,'boom'),('Spain',2004,145.0,9.7,'boom'),
+('Spain',2007,175.0,6.5,'peak'),('Spain',2012,105.0,-14.2,'bust'),
+('Spain',2016,108.0,3.6,'recovery'),('Spain',2020,132.0,4.4,'expansion'),
+('Spain',2022,158.0,8.4,'boom'),('Spain',2024,168.0,6.3,'expansion'),
+-- Romania
+('Romania',2000,100.0,NULL,'low_base'),('Romania',2006,160.0,18.1,'boom'),
+('Romania',2008,165.0,3.1,'peak'),('Romania',2012,100.0,-8.3,'bottom'),
+('Romania',2015,100.0,3.2,'base_year'),('Romania',2018,134.0,10.3,'expansion'),
+('Romania',2020,157.0,6.0,'resilient'),('Romania',2022,205.0,17.3,'boom'),
+('Romania',2024,267.0,16.9,'boom'),('Romania',2026,333.0,9.4,'expanding');
+
+-- ============================================================
+-- TABLE 2: global_market_events
+-- Key events driving each cycle phase
+-- ============================================================
+CREATE TABLE global_market_events (
+    event_id    SERIAL PRIMARY KEY,
+    event_date  DATE NOT NULL,
+    event_name  VARCHAR(80),
+    event_type  VARCHAR(20),   -- 'catalyst','shock','policy','turning_point'
+    impact      VARCHAR(20),   -- 'bullish','bearish','mixed'
+    countries_affected TEXT,
+    price_impact_pct NUMERIC(6,2),
+    description TEXT
+);
+
+INSERT INTO global_market_events
+    (event_date,event_name,event_type,impact,countries_affected,price_impact_pct,description)
+VALUES
+('2001-01-01','Post dot-com low rates','policy','bullish','Global',-2.0,'Fed cuts to 1%; fuelled housing boom worldwide'),
+('2007-06-01','US sub-prime crisis begins','shock','bearish','USA, UK, Ireland, Spain',-27.0,'Bear Stearns hedge funds collapse; credit crunch starts'),
+('2008-09-15','Lehman Brothers collapse','shock','bearish','Global',-15.0,'GFC triggers; credit markets freeze; global recession'),
+('2009-03-01','Quantitative Easing begins','policy','bullish','USA, UK, EU',+5.0,'Fed, BoE launch QE; rates to zero; housing floor forms'),
+('2012-07-01','Draghi "whatever it takes"','turning_point','bullish','Eurozone',+8.0,'ECB backstop ends eurozone debt crisis; confidence returns'),
+('2015-01-01','Romania VAT cut for homes','policy','bullish','Romania',+9.0,'5% VAT on homes under €450K; demand surge; Prima Casa'),
+('2020-03-01','COVID-19 lockdowns','shock','mixed','Global',-5.0,'Initial shock; then massive stimulus led to boom'),
+('2020-09-01','Remote work revolution','catalyst','bullish','USA, UK, Australia',+15.0,'Space demand surge; suburban/regional boom'),
+('2022-03-01','Fed begins hiking cycle','turning_point','bearish','Global',-8.0,'Fastest hike cycle in 40 years; mortgage rates double'),
+('2022-11-01','Romania VAT change Aug 2024','policy','mixed','Romania',-3.0,'VAT changes affect transaction timing; supply falls'),
+('2024-01-11','Bitcoin/BTC ETF approval','catalyst','mixed','Global',0.0,'Risk-on sentiment; wealth effect potential'),
+('2024-03-01','ECB begins cutting rates','policy','bullish','Eurozone',+3.0,'First cut cycle since 2019; mortgage relief incoming'),
+('2025-07-01','Romania energy price cap removed','shock','bearish','Romania',-2.0,'CPI spiked to 9.7%; BNR cannot cut aggressively'),
+('2025-10-01','Bucharest M6 metro groundwork','catalyst','bullish','Romania Bucharest',+8.0,'North corridor to Otopeni; property premium expected');
+
+-- ============================================================
+-- TABLE 3: romania_annual_data
+-- Romania macro + real estate annual series
+-- ============================================================
+CREATE TABLE romania_annual_data (
+    year              SMALLINT PRIMARY KEY,
+    avg_price_eur_sqm NUMERIC(8,2),
+    yoy_price_pct     NUMERIC(6,2),
+    hpi_index         NUMERIC(7,2),       -- 2015=100
+    transactions_k    NUMERIC(6,1),       -- thousands
+    gdp_growth_pct    NUMERIC(6,2),
+    cpi_inflation_pct NUMERIC(6,2),
+    bnr_rate_pct      NUMERIC(5,2),
+    mortgage_rate_pct NUMERIC(5,2),
+    housing_loans_bn_ron NUMERIC(8,1),
+    market_phase      VARCHAR(20)
+);
+
+INSERT INTO romania_annual_data VALUES
+(2009, 600,  NULL, 55.0, 160.0,-5.5, 5.6,10.25, 9.5,  NULL,'crash'),
+(2010, 580, -3.3, 53.0, 148.0,-3.9, 6.1, 6.25, 8.8,  NULL,'crash'),
+(2011, 550, -5.2, 50.0, 140.0, 2.8, 5.8, 5.75, 8.2,  NULL,'bottom'),
+(2012, 530, -3.6, 48.0, 132.0, 0.6, 3.3, 5.25, 7.5,  NULL,'bottom'),
+(2013, 520, -1.9, 47.0, 138.0, 3.4, 4.0, 4.00, 7.0,  NULL,'recovery'),
+(2014, 530,  1.9, 48.0, 150.0, 3.1, 1.1, 2.75, 6.5,  NULL,'recovery'),
+(2015, 560,  5.7,100.0, 168.0, 3.9,-0.6, 1.75, 5.8,  50.2,'expansion'),
+(2016, 610,  8.9,109.0, 182.0, 4.8,-1.5, 1.75, 5.5,  58.1,'expansion'),
+(2017, 680, 11.5,121.0, 196.0, 6.9, 1.3, 1.75, 5.2,  67.4,'expansion'),
+(2018, 750, 10.3,134.0, 188.0, 4.0, 4.6, 2.50, 6.0,  76.8,'expansion'),
+(2019, 830, 10.7,148.0, 195.0, 4.2, 3.9, 2.50, 5.8,  85.3,'expansion'),
+(2020, 880,  6.0,157.0, 152.0,-3.7, 2.6, 1.50, 5.0,  88.7,'disruption'),
+(2021, 980, 11.4,175.0, 192.0, 5.8, 5.1, 1.75, 5.1,  96.4,'boom'),
+(2022,1150, 17.3,205.0, 185.0, 4.6,13.8, 6.75, 7.5, 103.2,'boom'),
+(2023,1280, 11.3,228.0, 169.0, 2.4,10.4, 7.00, 7.8, 108.9,'cooling'),
+(2024,1496, 16.9,267.0, 169.0, 0.8, 5.6, 6.50, 6.8, 117.3,'resilient'),
+(2025,1710, 14.3,305.0, 164.0, 1.0, 7.3, 6.50, 5.7, 117.3,'boom'),
+(2026,1870,  9.4,333.0, 170.0, 1.1, 5.5, 5.75, 5.2, 124.0,'expanding');
+
+-- ============================================================
+-- TABLE 4: romania_city_prices
+-- Major Romanian cities price data
+-- ============================================================
+CREATE TABLE romania_city_prices (
+    city_id         SERIAL PRIMARY KEY,
+    city            VARCHAR(30) NOT NULL,
+    region          VARCHAR(20),
+    avg_eur_sqm_2024 NUMERIC(7,2),
+    avg_eur_sqm_2025 NUMERIC(7,2),
+    avg_eur_sqm_2026 NUMERIC(7,2),
+    yoy_2025_pct    NUMERIC(6,2),
+    price_range_low NUMERIC(7,2),
+    price_range_high NUMERIC(7,2),
+    rental_yield_low NUMERIC(5,2),
+    rental_yield_high NUMERIC(5,2),
+    price_to_income_yrs NUMERIC(5,1),
+    affordability   VARCHAR(15),
+    investment_stars SMALLINT,
+    population_k    NUMERIC(7,1),
+    notes           TEXT
+);
+
+INSERT INTO romania_city_prices
+(city,region,avg_eur_sqm_2024,avg_eur_sqm_2025,avg_eur_sqm_2026,yoy_2025_pct,
+ price_range_low,price_range_high,rental_yield_low,rental_yield_high,
+ price_to_income_yrs,affordability,investment_stars,population_k,notes)
+VALUES
+('Bucharest','Muntenia',1900,2100,2200,14.3,1200,4500,6.0,7.7,8.8,'Moderate',4,1800.0,'Capital; most liquid; 20 nbhds'),
+('Cluj-Napoca','Transylvania',2700,2950,3050,12.2,2000,5000,5.0,6.5,11.0,'Stretched',3,350.0,'Most expensive; tech/university hub'),
+('Timișoara','Banat',1480,1600,1650,10.8,1100,2800,6.5,8.0,7.2,'Good',4,280.0,'EU CoC 2023; automotive/IT hub'),
+('Brașov','Transylvania',1600,1750,1800,12.5,1200,3000,6.0,7.5,7.8,'Moderate',3,230.0,'Tourism + tech; mountain premium'),
+('Iași','Moldavia',1220,1320,1350,10.2,900,2200,7.0,9.0,6.5,'Good',4,350.0,'University city; most undervalued'),
+('Constanța','Dobrogea',1270,1370,1400,9.2,900,2800,6.0,8.0,6.8,'Good',3,250.0,'Black Sea coast; seasonal premium'),
+('Sibiu','Transylvania',1400,1520,1550,10.0,1000,2500,6.5,8.0,7.0,'Good',3,150.0,'Expat quality of life; German diaspora'),
+('Oradea','Crisana',1080,1170,1200,9.3,800,2000,7.0,9.0,6.0,'Affordable',4,200.0,'Border city; undervalued; growing');
+
+-- ============================================================
+-- TABLE 5: bucharest_neighborhoods
+-- Street-level neighborhood data for Bucharest
+-- ============================================================
+CREATE TABLE bucharest_neighborhoods (
+    nbhd_id          SERIAL PRIMARY KEY,
+    sector           SMALLINT NOT NULL,   -- 1-6
+    neighborhood     VARCHAR(40) NOT NULL,
+    zone_type        VARCHAR(25),
+    avg_eur_sqm      NUMERIC(7,2),
+    price_range_low  NUMERIC(7,2),
+    price_range_high NUMERIC(7,2),
+    monthly_rent_1br NUMERIC(7,2),        -- EUR
+    gross_yield_low  NUMERIC(5,2),
+    gross_yield_high NUMERIC(5,2),
+    appreciation_5yr_pct NUMERIC(6,2),
+    investment_profile VARCHAR(30),
+    metro_access     BOOLEAN,
+    metro_lines      VARCHAR(20),
+    key_strength     TEXT,
+    risk_notes       TEXT
+);
+
+INSERT INTO bucharest_neighborhoods
+(sector,neighborhood,zone_type,avg_eur_sqm,price_range_low,price_range_high,
+ monthly_rent_1br,gross_yield_low,gross_yield_high,appreciation_5yr_pct,
+ investment_profile,metro_access,metro_lines,key_strength,risk_notes)
+VALUES
+-- Sector 1
+(1,'Primăverii','Ultra-Premium',4000,3500,8000,2900,4.0,5.0,70.0,'Capital Preservation',true,'M2','Most exclusive address Romania','Illiquid; few transactions'),
+(1,'Herăstrău / Șos. Nordului','Premium',3200,2800,4500,2200,5.0,6.0,65.0,'Expat Cluster',true,'M2','Park + embassy + airport access','High entry price'),
+(1,'Aviației / Floreasca','Premium',2800,2400,3500,1800,5.5,6.5,80.0,'Best Balanced S1',true,'M2','Tech corps + fast appreciation','Noise from airport corridor'),
+(1,'Dorobanți / Domenii','Upper-Mid',2500,2000,3200,1400,5.0,6.0,55.0,'Boutique Residential',false,'None','Old money; quiet streets','Limited metro access'),
+(1,'Băneasa','Premium Suburban',2600,2200,3500,1600,5.0,6.0,60.0,'Family Villas',false,'None','International schools; airport','Car-dependent; limited transit'),
+-- Sector 2
+(2,'Iancului / Obor','Mid',1800,1500,2200,900,6.0,7.0,45.0,'Value Buy',true,'M2','Metro + market; improving rapidly','Mixed neighbourhood quality'),
+(2,'Colentina','Mid',1600,1300,2000,800,6.5,7.5,40.0,'Yield Play',true,'None (tram)','Student demand; affordable entry','No direct metro'),
+(2,'Tei / Plumbuita','Emerging',1500,1200,1900,750,7.0,8.0,38.0,'Speculative Upside',false,'None','Lake Tei + M3 extension planned','Longer timeline; speculative'),
+-- Sector 3
+(3,'Timpuri Noi','Gentrifying',2200,1800,2800,1100,6.5,7.5,90.0,'Highest Momentum',true,'M2+M3','New offices + Tineretului park','Price already ran significantly'),
+(3,'Titan / Balta Albă','Mid-Affordable',1500,1200,1900,750,7.0,9.0,55.0,'Best Yield/Price Ratio',true,'M2','Metro + new developments + yield','Older building stock available'),
+(3,'Dristor / Ramnicu Sarat','Mid',1650,1300,2100,820,6.5,7.5,48.0,'Steady Performer',true,'M2','Good connectivity; established','Limited upside catalyst'),
+-- Sector 4
+(4,'Tineretului','Gentrifying',2000,1700,2500,1000,6.5,7.0,70.0,'Central-Adjacent',true,'M2','Park + Timpuri Noi spillover','Gentrification not complete'),
+(4,'Berceni','Affordable',1300,1050,1700,650,7.0,8.5,35.0,'Entry-Level Investment',true,'M2','M2 access; budget buyers; liquid','Older blocks; earthquake risk'),
+(4,'Oltenitei','Budget',1150,900,1500,580,7.5,9.0,30.0,'Max Yield',true,'M2','Lowest entry point S4','Long commute to centre'),
+-- Sector 5
+(5,'Rahova','Budget',1200,950,1600,580,7.0,8.0,32.0,'High Yield High Risk',false,'None','Improving; affordable entry','Safety concerns; uneven quality'),
+(5,'13 Septembrie','Mid-Budget',1600,1300,2000,800,6.5,7.5,42.0,'Steady',true,'M1','Good transport links','Limited new supply'),
+-- Sector 6
+(6,'Militari','Mid-Affordable',1500,1200,1900,760,7.0,8.0,45.0,'Expat/Young Professionals',true,'M3','M3 metro + large apartment supply','Congested traffic corridors'),
+(6,'Drumul Taberei','Mid-Affordable',1550,1250,2000,780,7.0,8.0,50.0,'Fastest Emerging West',true,'M5','M5 metro opened 2021; strong demand','Still developing amenities'),
+(6,'Crângași','Mid',1650,1350,2100,820,6.5,7.5,48.0,'Balanced',true,'M3+M5','Lake Morii + metro + improving','Less known; slower appreciation'),
+(6,'Giulești','Budget',1200,950,1600,600,7.5,8.5,38.0,'Value',false,'None','Regeneration potential','Car-dependent; limited transit');
+
+-- ============================================================
+-- TABLE 6: interest_rates
+-- Central bank rates by country/year
+-- ============================================================
+CREATE TABLE interest_rates (
+    rate_id       SERIAL PRIMARY KEY,
+    country       VARCHAR(20) NOT NULL,
+    central_bank  VARCHAR(10),
+    year          SMALLINT NOT NULL,
+    policy_rate   NUMERIC(5,2),
+    mortgage_rate NUMERIC(5,2),
+    UNIQUE(country, year)
+);
+
+INSERT INTO interest_rates (country,central_bank,year,policy_rate,mortgage_rate) VALUES
+('USA','Fed',2000,6.50,8.1),('USA','Fed',2004,1.0,5.8),('USA','Fed',2008,0.25,5.1),
+('USA','Fed',2012,0.25,3.7),('USA','Fed',2016,0.5,3.9),('USA','Fed',2020,0.25,2.9),
+('USA','Fed',2022,4.5,7.1),('USA','Fed',2024,5.5,6.6),('USA','Fed',2026,3.75,5.9),
+('Eurozone','ECB',2000,4.75,6.5),('Eurozone','ECB',2008,2.5,5.8),
+('Eurozone','ECB',2012,0.75,4.0),('Eurozone','ECB',2016,0.0,2.7),
+('Eurozone','ECB',2020,0.0,1.4),('Eurozone','ECB',2022,2.5,3.6),
+('Eurozone','ECB',2024,4.5,4.2),('Eurozone','ECB',2026,2.65,3.8),
+('Romania','BNR',2009,10.25,9.5),('Romania','BNR',2015,1.75,5.8),
+('Romania','BNR',2020,1.50,5.0),('Romania','BNR',2022,6.75,7.5),
+('Romania','BNR',2024,7.00,6.8),('Romania','BNR',2026,5.75,5.2);
