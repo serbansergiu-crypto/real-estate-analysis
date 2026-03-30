@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global & Romania Real Estate Analysis 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F7F5F0;--surface:#FFFFFF;--surface2:#F0EDE6;
+  --border:#DDD9D0;--text:#1A1612;--muted:#7C7469;
+  --navy:#0F3460;--teal:#0E7490;--green:#065F46;
+  --red:#991B1B;--orange:#B45309;--purple:#6D28D9;
+  --gold:#D97706;--accent:#E94560;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.6;}
+
+/* NAV */
+nav{background:var(--navy);padding:0 32px;display:flex;align-items:center;gap:4px;overflow-x:auto;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--gold);}
+.nav-brand{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);padding:16px 0;margin-right:20px;white-space:nowrap;letter-spacing:1px;}
+.nav-tab{font-family:'DM Mono',monospace;font-size:10px;padding:16px 14px;cursor:pointer;color:rgba(255,255,255,0.5);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;letter-spacing:.5px;}
+.nav-tab:hover{color:white;}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0F3460 0%,#1a4a7a 60%,#0E7490 100%);padding:64px 32px;position:relative;overflow:hidden;}
+.hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:4px;background:var(--gold);}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 60L60 0M-10 10L10-10M50 70L70 50' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E");}
+.hero-inner{max-width:900px;margin:0 auto;position:relative;z-index:1;}
+.hero-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.hero h1{font-family:'Crimson Pro',serif;font-size:clamp(32px,5vw,56px);color:white;line-height:1.1;margin-bottom:16px;font-weight:600;}
+.hero h1 em{color:var(--gold);font-style:italic;}
+.hero-sub{font-size:15px;color:rgba(255,255,255,0.7);max-width:580px;margin-bottom:32px;}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.pill{font-family:'DM Mono',monospace;font-size:10px;padding:5px 14px;border-radius:2px;border:1px solid;}
+.pill-gold{color:var(--gold);border-color:rgba(215,151,6,0.4);background:rgba(215,151,6,0.08);}
+.pill-white{color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);}
+
+/* LAYOUT */
+.container{max-width:1100px;margin:0 auto;padding:0 32px;}
+.section{padding:48px 0;border-bottom:1px solid var(--border);}
+.section:last-child{border-bottom:none;}
+.section-title{font-family:'Crimson Pro',serif;font-size:26px;font-weight:600;margin-bottom:6px;color:var(--navy);}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:32px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-top:3px solid;padding:20px;border-radius:2px;}
+.kpi-navy{border-top-color:var(--navy);}
+.kpi-teal{border-top-color:var(--teal);}
+.kpi-green{border-top-color:var(--green);}
+.kpi-gold{border-top-color:var(--gold);}
+.kpi-accent{border-top-color:var(--accent);}
+.kpi-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.kpi-value{font-family:'Crimson Pro',serif;font-size:28px;font-weight:700;color:var(--navy);line-height:1.1;margin-bottom:4px;}
+.kpi-sub{font-size:11px;color:var(--muted);}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);padding:24px;border-radius:2px;}
+.chart-title{font-family:'Crimson Pro',serif;font-size:16px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:16px;}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;margin-top:16px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:var(--navy);color:white;padding:10px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;text-align:center;border:1px solid rgba(255,255,255,0.1);white-space:nowrap;}
+td{padding:10px 12px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
+tr:nth-child(even) td{background:var(--surface2);}
+tr:hover td{background:#EEF2FF;}
+.td-l{text-align:left;}
+.td-green{color:var(--green);font-weight:600;}
+.td-red{color:var(--red);font-weight:600;}
+.td-gold{color:var(--gold);font-weight:600;}
+.td-navy{color:var(--navy);font-weight:600;}
+.td-bold{font-weight:600;}
+
+/* NEIGHBORHOOD GRID */
+.nbhd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:16px;}
+.nbhd-card{background:var(--surface);border:1px solid var(--border);padding:16px;border-left:3px solid;border-radius:2px;transition:box-shadow .2s;}
+.nbhd-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.nbhd-s1{border-left-color:#E94560;}
+.nbhd-s2{border-left-color:#0E7490;}
+.nbhd-s3{border-left-color:#065F46;}
+.nbhd-s4{border-left-color:#6D28D9;}
+.nbhd-s5{border-left-color:#B45309;}
+.nbhd-s6{border-left-color:#0F3460;}
+.nbhd-name{font-weight:600;font-size:14px;color:var(--navy);margin-bottom:4px;}
+.nbhd-sector{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;}
+.nbhd-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.nbhd-stat{background:var(--surface2);padding:6px 8px;border-radius:2px;}
+.nbhd-stat-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:.5px;}
+.nbhd-stat-value{font-size:13px;font-weight:600;color:var(--text);margin-top:1px;}
+.nbhd-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;margin-top:8px;}
+.tag-premium{background:#FFF1F2;color:#991B1B;}
+.tag-value{background:#ECFDF5;color:#065F46;}
+.tag-emerging{background:#EFF6FF;color:#0F3460;}
+.tag-budget{background:#FFFBEB;color:#B45309;}
+
+/* INSIGHT CARDS */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px;}
+.insight{background:var(--surface);border:1px solid var(--border);padding:20px;border-left:4px solid;}
+.ins-bull{border-left-color:var(--green);}
+.ins-bear{border-left-color:var(--red);}
+.ins-neutral{border-left-color:var(--gold);}
+.ins-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.ins-bull .ins-tag{color:var(--green);}
+.ins-bear .ins-tag{color:var(--red);}
+.ins-neutral .ins-tag{color:var(--gold);}
+.ins-title{font-family:'Crimson Pro',serif;font-size:15px;font-weight:600;margin-bottom:6px;color:var(--navy);}
+.ins-body{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* PAGES */
+.page{display:none;}.page.active{display:block;}
+@media(max-width:768px){.chart-grid{grid-template-columns:1fr;}.container{padding:0 16px;}.nbhd-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">🏠 RE ANALYSIS</div>
+  <div class="nav-tab active" onclick="show('overview',this)">Overview</div>
+  <div class="nav-tab" onclick="show('global',this)">Global Cycles</div>
+  <div class="nav-tab" onclick="show('romania',this)">Romania</div>
+  <div class="nav-tab" onclick="show('bucharest',this)">Bucharest Map</div>
+  <div class="nav-tab" onclick="show('rates',this)">Rates & Afford.</div>
+  <div class="nav-tab" onclick="show('outlook',this)">Outlook 2030</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Real Estate Analysis · Global & Romania · 2000–2026</div>
+    <h1>Property Markets:<br><em>Global Cycles,</em> Romania &amp; Bucharest</h1>
+    <p class="hero-sub">Three global cycles since 2000, Romania's convergence story, and a street-level Bucharest neighborhood breakdown — with rates, affordability, and 2030 outlook.</p>
+    <div class="hero-pills">
+      <span class="pill pill-gold">Bucharest avg €2,200/sqm</span>
+      <span class="pill pill-white">+15% YoY · Jan 2026</span>
+      <span class="pill pill-gold">Yields 6–9% · 2× EU avg</span>
+      <span class="pill pill-white">4th cheapest in EU</span>
+      <span class="pill pill-gold">BNR rate 6.50%</span>
+      <span class="pill pill-white">Supply down 20%+</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OVERVIEW ══ -->
+<div id="overview" class="page active">
+<div class="container">
+<div class="section">
+  <div class="kpi-grid">
+    <div class="kpi kpi-navy"><div class="kpi-label">Bucharest Avg €/sqm</div><div class="kpi-value">€2,200</div><div class="kpi-sub">Jan 2026 · +15% YoY</div></div>
+    <div class="kpi kpi-teal"><div class="kpi-label">Cluj-Napoca €/sqm</div><div class="kpi-value">€3,050</div><div class="kpi-sub">Most expensive Romania</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">Rental Yield</div><div class="kpi-value">6–9%</div><div class="kpi-sub">2× EU average of 3–4%</div></div>
+    <div class="kpi kpi-gold"><div class="kpi-label">Romania HPI Growth</div><div class="kpi-value">+14%</div><div class="kpi-sub">2025 nominal · top 5 EU</div></div>
+    <div class="kpi kpi-accent"><div class="kpi-label">BNR Policy Rate</div><div class="kpi-value">6.50%</div><div class="kpi-sub">Expected: 5.75% end-2026</div></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card" style="grid-column:1/-1">
+      <div class="chart-title">Romania National Price Index — €/sqm (2012–2026)</div>
+      <div class="chart-sub">National average apartment price vs. Bucharest new-build premium</div>
+      <canvas id="roPriceChart" height="80"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-grid" style="margin-top:20px">
+    <div class="chart-card">
+      <div class="chart-title">Romanian Cities — €/sqm Comparison (2026)</div>
+      <div class="chart-sub">Average price per sqm across major cities</div>
+      <canvas id="citiesChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Romania vs EU — Key Metrics</div>
+      <div class="chart-sub">How Romania compares to the EU average on key housing indicators</div>
+      <canvas id="roVsEuChart" height="220"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ GLOBAL CYCLES ══ -->
+<div id="global" class="page">
+<div class="container">
+<div class="section">
+  <div class="section-title">Three Global Real Estate Cycles Since 2000</div>
+  <div class="section-sub">Each cycle driven by credit conditions, central bank policy, and structural supply-demand imbalances. The pattern: boom → crisis → recovery → new boom.</div>
+
+  <div class="chart-grid">
+    <div class="chart-card" style="grid-column:1/-1">
+      <div class="chart-title">Global House Price Index — Major Markets (2000=100, Indexed)</div>
+      <div class="chart-sub">Relative performance of key markets through 3 full cycles</div>
+      <canvas id="globalCyclesChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-grid" style="margin-top:20px">
+    <div class="chart-card">
+      <div class="chart-title">GFC Crash Depth by Country (2007–2012)</div>
+      <div class="chart-sub">Max % price decline from peak during Cycle 1 bust</div>
+      <canvas id="gfcCrashChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Post-COVID Boom by Market (2020–2022)</div>
+      <div class="chart-sub">% price gain from COVID low to 2022 peak</div>
+      <canvas id="covidBoomChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div style="margin-top:24px">
+    <div class="section-title" style="font-size:18px">Cycle Summary — 3 Key Lessons</div>
+    <div class="insight-grid">
+      <div class="insight ins-bull">
+        <div class="ins-tag">✅ Lesson 1</div>
+        <div class="ins-title">Markets Always Recover — But Timing Varies Wildly</div>
+        <div class="ins-body">Ireland crashed −55% and took 10+ years to fully recover. The US crashed −27% and recovered in 4 years. Germany barely fell at all in 2008. Location, lending standards, and supply elasticity determine recovery speed more than the crash itself.</div>
+      </div>
+      <div class="insight ins-neutral">
+        <div class="ins-tag">⚠️ Lesson 2</div>
+        <div class="ins-title">The 18-Year Real Estate Cycle Is Remarkably Durable</div>
+        <div class="ins-body">With the last major bottom around 2011–2012, the 18-year cycle framework projects the next major peak around 2026–2029 and a correction phase beginning around 2027–2030. We are potentially at the late expansion phase globally — but supply constraints may delay the peak.</div>
+      </div>
+      <div class="insight ins-bear">
+        <div class="ins-tag">⚠️ Lesson 3</div>
+        <div class="ins-title">Rate Hikes Are the Single Most Reliable Cycle Killer</div>
+        <div class="ins-body">Every major real estate correction in the post-2000 period was preceded or accompanied by central bank rate hikes. The 2022–2024 hike cycle (fastest in 40 years) is already cooling markets globally. Sweden −20%, Germany −14%, Canada −15%. The question is whether Romania, with its structural supply shortage, is insulated.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ ROMANIA ══ -->
+<div id="romania" class="page">
+<div class="container">
+<div class="section">
+  <div class="section-title">Romania Real Estate — The Convergence Story</div>
+  <div class="section-sub">Romania is the most interesting real estate market in Central-Eastern Europe: 4th cheapest in the EU, highest rental yields, fastest price growth, and still 3× below Western Europe. A structural multi-decade convergence story.</div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Romania HPI vs GDP Growth (2015–2026E)</div>
+      <div class="chart-sub">House price inflation consistently outpacing GDP — a structural story</div>
+      <canvas id="roHpiGdpChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Inflation vs BNR Rate vs Mortgage Rate (2020–2026)</div>
+      <div class="chart-sub">The squeeze: inflation ran hot, rates chased, affordability compressed</div>
+      <canvas id="roRatesChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div style="margin-top:24px">
+    <div class="section-title" style="font-size:18px;margin-bottom:16px">Romanian Cities — Price, Yield & Affordability</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>City</th><th>Avg €/sqm</th><th>YoY Growth</th><th>Rental Yield</th>
+          <th>Price-to-Income</th><th>Affordability</th><th>Investment Rating</th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="td-l td-bold">Bucharest</td><td>€2,200</td><td class="td-green">+15%</td><td class="td-green">6–7.7%</td><td>8.8 yrs</td><td>Moderate</td><td class="td-gold">★★★★</td></tr>
+          <tr><td class="td-l td-bold">Cluj-Napoca</td><td class="td-red">€3,050</td><td class="td-green">+12%</td><td>5–6.5%</td><td class="td-red">11+ yrs</td><td class="td-red">Stretched</td><td>★★★</td></tr>
+          <tr><td class="td-l td-bold">Timișoara</td><td>€1,650</td><td class="td-green">+11%</td><td class="td-green">6.5–8%</td><td>7.2 yrs</td><td class="td-green">Good</td><td class="td-gold">★★★★</td></tr>
+          <tr><td class="td-l td-bold">Iași</td><td class="td-green">€1,350</td><td>+10%</td><td class="td-green">7–9%</td><td class="td-green">6.5 yrs</td><td class="td-green">Good</td><td class="td-gold">★★★★</td></tr>
+          <tr><td class="td-l td-bold">Brașov</td><td>€1,800</td><td class="td-green">+13%</td><td class="td-green">6–7.5%</td><td>7.8 yrs</td><td>Moderate</td><td>★★★</td></tr>
+          <tr><td class="td-l td-bold">Oradea</td><td class="td-green">€1,200</td><td>+9%</td><td class="td-green">7–9%</td><td class="td-green">6.0 yrs</td><td class="td-green">Affordable</td><td class="td-gold">★★★★</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="insight-grid" style="margin-top:24px">
+    <div class="insight ins-bull">
+      <div class="ins-tag">✅ Bull Case</div>
+      <div class="ins-title">Supply Crunch Is the Dominant Force</div>
+      <div class="ins-body">Building permits down 20%+ in 2025. New residential deliveries fell year-on-year. Construction costs up 40%+ since 2020. This supply shortage is structural, not cyclical — it will take 3–5 years of sustained permit growth to close the gap. Prices have fundamental support regardless of macro.</div>
+    </div>
+    <div class="insight ins-neutral">
+      <div class="ins-tag">⚠️ Watch</div>
+      <div class="ins-title">Inflation at 9.7% Is the Wild Card</div>
+      <div class="ins-body">Romania's December 2025 CPI of 9.7% — highest in the EU — is being driven by VAT increases and energy price cap removal. This erodes real purchasing power even as nominal prices rise. Real house price gains in 2025 are closer to +6–8% after inflation, not +14–15%. The BNR cannot cut aggressively until inflation falls.</div>
+    </div>
+    <div class="insight ins-bear">
+      <div class="ins-tag">⚠️ Risk</div>
+      <div class="ins-title">Fiscal Deficit at 9.3% of GDP Is Unsustainable</div>
+      <div class="ins-body">Romania's 9.3% deficit in 2024 is the highest in the EU and a sovereign rating threat. Fiscal consolidation (wage freezes, tax hikes, spending cuts) will compress consumer confidence and potentially slow real estate demand in 2026. However, the EU's €31B NRRP program provides a counterweight through infrastructure investment.</div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ BUCHAREST ══ -->
+<div id="bucharest" class="page">
+<div class="container">
+<div class="section">
+  <div class="section-title">Bucharest Neighborhood Price Map</div>
+  <div class="section-sub">20 neighborhoods across 6 sectors — price per sqm, rental yields, 5-year appreciation, and investment profile. Data: January 2026.</div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">Bucharest Neighborhoods — €/sqm by Area (Jan 2026)</div>
+    <div class="chart-sub">From ultra-premium Primăverii (€4,000+) to budget Berceni (€1,300)</div>
+    <canvas id="buchChart" height="100"></canvas>
+  </div>
+
+  <div class="nbhd-grid">
+    <div class="nbhd-card nbhd-s1"><div class="nbhd-name">Primăverii</div><div class="nbhd-sector">SECTOR 1 · ULTRA-PREMIUM</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€4,000+</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">4–5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+70%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€2,900</div></div></div><span class="nbhd-tag tag-premium">Capital Preservation</span></div>
+
+    <div class="nbhd-card nbhd-s1"><div class="nbhd-name">Herăstrău / Șos. Nordului</div><div class="nbhd-sector">SECTOR 1 · PREMIUM</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€3,200</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">5–6%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+65%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€2,200</div></div></div><span class="nbhd-tag tag-premium">Expat Cluster</span></div>
+
+    <div class="nbhd-card nbhd-s1"><div class="nbhd-name">Aviației / Floreasca</div><div class="nbhd-sector">SECTOR 1 · PREMIUM</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€2,800</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">5.5–6.5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value" style="color:#065F46">+80%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€1,800</div></div></div><span class="nbhd-tag tag-premium">Best S1 Balanced</span></div>
+
+    <div class="nbhd-card nbhd-s3"><div class="nbhd-name">Timpuri Noi</div><div class="nbhd-sector">SECTOR 3 · GENTRIFYING</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€2,200</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">6.5–7.5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value" style="color:#065F46">+90%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€1,100</div></div></div><span class="nbhd-tag tag-emerging">Highest Momentum</span></div>
+
+    <div class="nbhd-card nbhd-s4"><div class="nbhd-name">Tineretului</div><div class="nbhd-sector">SECTOR 4 · GENTRIFYING</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€2,000</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">6.5–7%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+70%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€1,000</div></div></div><span class="nbhd-tag tag-emerging">Timpuri Noi Spillover</span></div>
+
+    <div class="nbhd-card nbhd-s6"><div class="nbhd-name">Drumul Taberei</div><div class="nbhd-sector">SECTOR 6 · MID-AFFORDABLE</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,550</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">7–8%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+50%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€780</div></div></div><span class="nbhd-tag tag-emerging">M5 Metro · Fast Emerging</span></div>
+
+    <div class="nbhd-card nbhd-s6"><div class="nbhd-name">Militari</div><div class="nbhd-sector">SECTOR 6 · MID-AFFORDABLE</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,500</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">7–8%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+45%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€760</div></div></div><span class="nbhd-tag tag-value">Best Yield/Price Ratio</span></div>
+
+    <div class="nbhd-card nbhd-s3"><div class="nbhd-name">Titan / Balta Albă</div><div class="nbhd-sector">SECTOR 3 · MID-AFFORDABLE</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,500</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value" style="color:#065F46">7–9%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+55%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€750</div></div></div><span class="nbhd-tag tag-value">Top Yield in City</span></div>
+
+    <div class="nbhd-card nbhd-s4"><div class="nbhd-name">Berceni</div><div class="nbhd-sector">SECTOR 4 · AFFORDABLE</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,300</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">7–8.5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+35%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€650</div></div></div><span class="nbhd-tag tag-budget">Entry-Level Investment</span></div>
+
+    <div class="nbhd-card nbhd-s2"><div class="nbhd-name">Colentina</div><div class="nbhd-sector">SECTOR 2 · MID</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,600</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">6.5–7.5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+40%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€800</div></div></div><span class="nbhd-tag tag-value">Student Demand</span></div>
+
+    <div class="nbhd-card nbhd-s5"><div class="nbhd-name">Rahova</div><div class="nbhd-sector">SECTOR 5 · BUDGET</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,200</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">7–8%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+32%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€580</div></div></div><span class="nbhd-tag tag-budget">High Yield · Higher Risk</span></div>
+
+    <div class="nbhd-card nbhd-s6"><div class="nbhd-name">Crângași</div><div class="nbhd-sector">SECTOR 6 · MID</div><div class="nbhd-stats"><div class="nbhd-stat"><div class="nbhd-stat-label">€/sqm</div><div class="nbhd-stat-value">€1,650</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Yield</div><div class="nbhd-stat-value">6.5–7.5%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">5yr Gain</div><div class="nbhd-stat-value">+48%</div></div><div class="nbhd-stat"><div class="nbhd-stat-label">Rent/mo</div><div class="nbhd-stat-value">€820</div></div></div><span class="nbhd-tag tag-emerging">Lake · Improving</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ RATES ══ -->
+<div id="rates" class="page">
+<div class="container">
+<div class="section">
+  <div class="section-title">Interest Rates, Mortgages & Affordability</div>
+  <div class="section-sub">The fastest rate hiking cycle in 40 years (2022–2024) reshaped global real estate. Romania's BNR followed with its own hike cycle — now unwinding.</div>
+
+  <div class="chart-grid">
+    <div class="chart-card" style="grid-column:1/-1">
+      <div class="chart-title">Central Bank Policy Rates — Major Economies (2000–2026)</div>
+      <div class="chart-sub">From zero-rate era (2009–2022) to fastest hike cycle in 40 years — and now gradual cuts</div>
+      <canvas id="ratesChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <div style="margin-top:24px">
+    <div class="section-title" style="font-size:18px;margin-bottom:16px">Bucharest Mortgage Affordability — What Can You Buy? (2026)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Property Type</th><th>Size</th><th>Price (€)</th><th>Down (30%)</th><th>Monthly Payment</th><th>Salary Needed</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="td-l">Studio, Militari</td><td>32m²</td><td>€48,000</td><td>€14,400</td><td>€206/mo</td><td>€688 net</td><td class="td-green">✅ Accessible</td></tr>
+          <tr><td class="td-l">1BR, Titan</td><td>45m²</td><td>€68,000</td><td>€20,400</td><td>€292/mo</td><td>€973 net</td><td class="td-green">✅ Accessible</td></tr>
+          <tr><td class="td-l">2BR mid, Drumul Taberei</td><td>60m²</td><td>€93,000</td><td>€27,900</td><td>€399/mo</td><td>€1,330 net</td><td class="td-gold">⚠️ Moderate</td></tr>
+          <tr><td class="td-l">2BR premium, Floreasca</td><td>65m²</td><td>€182,000</td><td>€54,600</td><td>€781/mo</td><td>€2,603 net</td><td class="td-gold">⚠️ Stretched</td></tr>
+          <tr><td class="td-l">3BR family, Militari</td><td>80m²</td><td>€120,000</td><td>€36,000</td><td>€515/mo</td><td>€1,717 net</td><td class="td-gold">⚠️ Moderate</td></tr>
+          <tr><td class="td-l">3BR premium, Aviației</td><td>90m²</td><td>€252,000</td><td>€75,600</td><td>€1,081/mo</td><td>€3,603 net</td><td class="td-red">❌ Inaccessible</td></tr>
+          <tr><td class="td-l">Villa, Pipera fringe</td><td>160m²</td><td>€420,000</td><td>€126,000</td><td>€1,803/mo</td><td>€6,010 net</td><td class="td-red">❌ Elite only</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">25-year term · 5.55% fixed · 30% down · Max 30% debt-to-income · Avg Bucharest net salary ~€1,050/month</p>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ OUTLOOK ══ -->
+<div id="outlook" class="page">
+<div class="container">
+<div class="section">
+  <div class="section-title">2026–2030 Outlook & Scenarios</div>
+  <div class="section-sub">Four scenarios for global markets and Romania specifically, based on macro trajectory, rate path, and structural supply-demand dynamics.</div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Scenario Probability Distribution — Global</div>
+      <div class="chart-sub">Market outcome probabilities 2026–2030</div>
+      <canvas id="scenGlobalChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Romania — Buy vs Wait Score Card</div>
+      <div class="chart-sub">10 factors weighted: buy signal (5) vs wait signal (0)</div>
+      <canvas id="buyWaitChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="insight-grid" style="margin-top:24px">
+    <div class="insight ins-bull">
+      <div class="ins-tag">✅ Bull Case (35%)</div>
+      <div class="ins-title">Rate Cuts Unlock Pent-Up Demand</div>
+      <div class="ins-body">BNR cuts to 4.5% by 2027, mortgages fall to ~4.5%. Combined with the €31B EU NRRP infrastructure program and supply shortage, Bucharest prices rise 12–18% annually. Best strategy: buy quality assets in emerging zones now, before rate cuts arrive.</div>
+    </div>
+    <div class="insight ins-neutral">
+      <div class="ins-tag">→ Base Case (40%)</div>
+      <div class="ins-title">Gradual Normalisation — Slow Growth</div>
+      <div class="ins-body">BNR cuts to 5.5% by 2027. Prices grow 6–10% annually — below 2024–2025 pace but still positive. Transaction volumes recover modestly. Supply shortage provides fundamental floor. Best strategy: selective buying in metro-connected affordable areas.</div>
+    </div>
+    <div class="insight ins-bear">
+      <div class="ins-tag">⚠️ Bear Case (20%)</div>
+      <div class="ins-title">Fiscal Crisis Spooks Buyers</div>
+      <div class="ins-body">Romania's 9.3% deficit triggers sovereign downgrade. Consumer confidence drops. Real prices stagnate or fall 0–5%. Transaction volumes drop to 2023 lows. Best strategy: wait for clarity; rental income strategy in the interim.</div>
+    </div>
+    <div class="insight ins-bear">
+      <div class="ins-tag">❌ Crash (5%)</div>
+      <div class="ins-title">External Shock + Credit Crisis</div>
+      <div class="ins-body">Global recession, EU property crash, or Romanian banking crisis causes −10–20% price fall. Rare but possible — 2008 showed Romania can fall 30–40% in a severe scenario. Best strategy: maximum liquidity, no leverage, distressed asset hunting post-crash.</div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;background:var(--surface);border:1px solid var(--border);padding:24px;border-top:3px solid var(--navy);">
+    <div style="font-family:'Crimson Pro',serif;font-size:20px;font-weight:600;color:var(--navy);margin-bottom:12px">The Bottom Line on Bucharest</div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.8;max-width:800px">Bucharest is a structurally compelling real estate market with three durable tailwinds: EU convergence (still 3× below Western European prices), supply shortage (permits down 20%+), and strong rental yields (6–9% vs EU average of 3–4%). The current headwinds — high BNR rate, 9.7% inflation, fiscal consolidation — are real but temporary. The 2026–2027 window, when BNR cuts begin arriving, is likely the last affordable entry point before EU institutional capital accelerates the convergence trade. Emerging neighborhoods with metro connectivity (Drumul Taberei, Titan, Militari) offer the best risk-adjusted returns. Premium Sector 1 offers capital preservation for those who can afford it.</p>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+const navy='#0F3460',teal='#0E7490',green='#065F46',red='#991B1B',
+      gold='#D97706',orange='#B45309',purple='#6D28D9',accent='#E94560',
+      muted='#7C7469',border='#DDD9D0';
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.color=muted;
+Chart.defaults.borderColor=border;
+function show(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+// Romania price history line
+new Chart(document.getElementById('roPriceChart'),{type:'line',data:{
+  labels:['2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026E'],
+  datasets:[
+    {label:'National avg €/sqm',data:[530,520,530,560,610,680,750,830,880,980,1150,1280,1496,1710,1870],borderColor:navy,backgroundColor:'rgba(15,52,96,0.08)',tension:.4,fill:true,pointRadius:3},
+    {label:'Bucharest new-build',data:[650,640,660,700,780,880,980,1100,1180,1350,1600,1820,2100,2362,2600],borderColor:accent,backgroundColor:'rgba(233,69,96,0.06)',tension:.4,fill:true,pointRadius:3,borderDash:[4,4]},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{x:{grid:{color:border}},y:{grid:{color:border},ticks:{callback:v=>'€'+v.toLocaleString()}}}}});
+
+// Cities bar
+new Chart(document.getElementById('citiesChart'),{type:'bar',data:{
+  labels:['Bucharest','Cluj-Napoca','Timișoara','Brașov','Sibiu','Constanța','Iași','Oradea'],
+  datasets:[{data:[2200,3050,1650,1800,1550,1400,1350,1200],
+    backgroundColor:[navy,accent,teal,purple,orange,gold,green,'#0E7490'],borderRadius:2}]
+},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'€'+c.raw.toLocaleString()+'/sqm'}}},scales:{x:{grid:{display:false}},y:{grid:{color:border},ticks:{callback:v=>'€'+v.toLocaleString()}}}}});
+
+// Romania vs EU radar
+new Chart(document.getElementById('roVsEuChart'),{type:'radar',data:{
+  labels:['Price Growth','Rental Yield','Affordability','Supply','Mortgage Access','GDP Growth'],
+  datasets:[
+    {label:'Romania',data:[90,90,65,35,50,40],borderColor:accent,backgroundColor:'rgba(233,69,96,0.1)',pointBackgroundColor:accent},
+    {label:'EU Average',data:[50,40,55,55,70,55],borderColor:navy,backgroundColor:'rgba(15,52,96,0.08)',pointBackgroundColor:navy},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{r:{grid:{color:border},ticks:{display:false},min:0,max:100}}}});
+
+// Global cycles
+new Chart(document.getElementById('globalCyclesChart'),{type:'line',data:{
+  labels:['2000','2002','2004','2006','2008','2010','2012','2014','2016','2018','2020','2022','2024','2026E'],
+  datasets:[
+    {label:'USA',data:[100,105,120,155,145,130,135,155,170,190,195,240,230,235],borderColor:navy,tension:.4,fill:false,pointRadius:2},
+    {label:'UK',data:[100,112,140,175,155,148,150,165,175,185,188,220,210,215],borderColor:teal,tension:.4,fill:false,pointRadius:2},
+    {label:'Germany',data:[100,98,97,96,98,99,100,107,120,145,165,185,162,165],borderColor:gold,tension:.4,fill:false,pointRadius:2},
+    {label:'Spain',data:[100,115,145,175,155,130,105,108,118,130,132,158,162,168],borderColor:red,tension:.4,fill:false,pointRadius:2},
+    {label:'Romania',data:[100,105,120,160,165,115,100,103,110,130,140,175,215,245],borderColor:accent,tension:.4,fill:false,pointRadius:2,borderWidth:2.5},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{x:{grid:{color:border}},y:{grid:{color:border},ticks:{callback:v=>v}}}}});
+
+// GFC crash
+new Chart(document.getElementById('gfcCrashChart'),{type:'bar',data:{
+  labels:['Ireland','Spain','US','UK','Latvia','Romania','France','Germany'],
+  datasets:[{data:[-55,-38,-27,-20,-70,-38,-10,-5],
+    backgroundColor:['rgba(153,27,27,0.9)','rgba(153,27,27,0.8)','rgba(153,27,27,0.7)','rgba(153,27,27,0.6)','rgba(153,27,27,1)','rgba(233,69,96,0.8)','rgba(153,27,27,0.4)','rgba(153,27,27,0.2)'],
+    borderRadius:2}]
+},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}},scales:{x:{grid:{color:border},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+
+// COVID boom
+new Chart(document.getElementById('covidBoomChart'),{type:'bar',data:{
+  labels:['Australia','Canada','USA','New Zealand','Germany','UK','Romania','France'],
+  datasets:[{data:[43,42,43,43,14,20,35,11],
+    backgroundColor:[teal,navy,accent,purple,gold,orange,red,green].map(c=>c+'DD'),
+    borderRadius:2}]
+},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'+'+c.raw+'%'}}},scales:{x:{grid:{color:border},ticks:{callback:v=>'+'+v+'%'}},y:{grid:{display:false}}}}});
+
+// Romania HPI vs GDP
+new Chart(document.getElementById('roHpiGdpChart'),{type:'bar',data:{
+  labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'],
+  datasets:[
+    {label:'House Price Growth %',data:[8.9,11.5,10.3,10.7,6.0,11.4,17.3,11.3,16.9,14.3],backgroundColor:'rgba(15,52,96,0.8)',borderRadius:2},
+    {label:'GDP Growth %',data:[4.8,6.9,4.0,4.2,-3.7,5.8,4.6,2.4,0.8,1.0],backgroundColor:'rgba(14,116,144,0.6)',borderRadius:2},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{x:{grid:{display:false}},y:{grid:{color:border},ticks:{callback:v=>v+'%'}}}}});
+
+// Romania rates
+new Chart(document.getElementById('roRatesChart'),{type:'line',data:{
+  labels:['2020','2021','2022','2023','2024','2025','2026E'],
+  datasets:[
+    {label:'Inflation (CPI)',data:[2.6,5.1,13.8,10.4,5.6,7.3,5.5],borderColor:red,tension:.4,fill:false,pointRadius:3},
+    {label:'BNR Policy Rate',data:[1.5,1.75,6.75,7.0,6.5,6.5,5.75],borderColor:navy,tension:.4,fill:false,pointRadius:3},
+    {label:'Mortgage Rate (fixed)',data:[5.0,4.8,6.5,7.2,6.8,5.7,5.55],borderColor:gold,tension:.4,fill:false,pointRadius:3,borderDash:[4,4]},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{x:{grid:{color:border}},y:{grid:{color:border},ticks:{callback:v=>v+'%'}}}}});
+
+// Bucharest neighborhoods
+new Chart(document.getElementById('buchChart'),{type:'bar',data:{
+  labels:['Primăverii','Herăstrău','Aviației','Dorobanți','Băneasa','Timpuri Noi','Tineretului','Crângași','Drumul Taberei','Militari','Titan','Colentina','Iancului','Dristor','Berceni','Rahova'],
+  datasets:[{
+    data:[4000,3200,2800,2500,2600,2200,2000,1650,1550,1500,1500,1600,1800,1650,1300,1200],
+    backgroundColor:[
+      '#E94560','#E94560','#E94560','#E94560','#E94560',
+      '#065F46','#065F46',
+      '#0F3460','#0F3460','#0F3460','#0F3460',
+      '#0E7490','#0E7490','#0E7490',
+      '#B45309','#B45309'
+    ].map(c=>c+'CC'),borderRadius:2
+  }]
+},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'€'+c.raw.toLocaleString()+'/sqm'}}},scales:{x:{grid:{display:false},ticks:{maxRotation:45,font:{size:10}}},y:{grid:{color:border},ticks:{callback:v=>'€'+v.toLocaleString()}}}}});
+
+// Global rates
+new Chart(document.getElementById('ratesChart'),{type:'line',data:{
+  labels:['2000','2004','2008','2012','2016','2020','2022','2024','2026E'],
+  datasets:[
+    {label:'USA (Fed)',data:[6.5,1.0,0.25,0.25,0.5,0.25,4.5,5.5,3.75],borderColor:navy,tension:.4,fill:false,pointRadius:3},
+    {label:'Eurozone (ECB)',data:[4.75,2.0,2.5,0.75,0.0,0.0,2.5,4.5,2.65],borderColor:teal,tension:.4,fill:false,pointRadius:3},
+    {label:'UK (BoE)',data:[6.0,4.5,2.0,0.5,0.25,0.1,3.5,5.25,4.5],borderColor:gold,tension:.4,fill:false,pointRadius:3},
+    {label:'Romania (BNR)',data:[null,null,10.25,5.25,1.75,1.5,6.75,7.0,5.75],borderColor:accent,tension:.4,fill:false,pointRadius:3,borderWidth:2.5},
+  ]
+},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{x:{grid:{color:border}},y:{grid:{color:border},ticks:{callback:v=>v+'%'}}}}});
+
+// Scenario pie
+new Chart(document.getElementById('scenGlobalChart'),{type:'doughnut',data:{
+  labels:['Soft Landing (45%)','Rate Relief Rally (25%)','Stagflation Grind (20%)','Hard Landing (10%)'],
+  datasets:[{data:[45,25,20,10],backgroundColor:[green,navy,orange,red].map(c=>c+'CC'),borderWidth:2,borderColor:'white'}]
+},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}});
+
+// Buy/Wait radar
+new Chart(document.getElementById('buyWaitChart'),{type:'radar',data:{
+  labels:['Supply Shortage','Wage Growth','Rental Yield','Long-term Convergence','EU NRRP Funds','Rate Level','Inflation','Fiscal Risk','Price Momentum','Earthquake Risk'],
+  datasets:[{label:'Buy Signal Strength',
+    data:[5,4,5,5,4,2,2,2,3,2],
+    borderColor:navy,backgroundColor:'rgba(15,52,96,0.15)',pointBackgroundColor:navy}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{r:{grid:{color:border},ticks:{display:false,stepSize:1},min:0,max:5,pointLabels:{font:{size:10}}}}}});
+</script>
+</body>
+</html>
