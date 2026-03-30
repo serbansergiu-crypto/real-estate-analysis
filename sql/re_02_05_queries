@@ -1,0 +1,402 @@
+-- ============================================================
+-- FILE 02: GLOBAL CYCLE ANALYSIS
+-- Project : Global & Romania Real Estate Analysis
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 1: Global cycle performance — peak, trough, recovery
+-- ──────────────────────────────────────────────────────────────
+WITH cycle_stats AS (
+    SELECT country,
+        MAX(CASE WHEN year BETWEEN 2000 AND 2007 THEN hpi END) AS cycle1_peak,
+        MIN(CASE WHEN year BETWEEN 2008 AND 2012 THEN hpi END) AS cycle1_trough,
+        MAX(CASE WHEN year BETWEEN 2013 AND 2020 THEN hpi END) AS cycle2_peak,
+        MAX(CASE WHEN year BETWEEN 2020 AND 2022 THEN hpi END) AS cycle3_peak,
+        (SELECT hpi FROM global_price_index p2
+         WHERE p2.country = p.country AND p2.year = 2026) AS current_hpi
+    FROM global_price_index p
+    GROUP BY country
+)
+SELECT
+    country,
+    ROUND(cycle1_peak, 0)                                          AS cycle1_peak_hpi,
+    ROUND(cycle1_trough, 0)                                        AS cycle1_trough_hpi,
+    ROUND(100.0*(cycle1_trough/cycle1_peak - 1), 1)                AS cycle1_crash_pct,
+    ROUND(cycle2_peak, 0)                                          AS cycle2_peak_hpi,
+    ROUND(100.0*(cycle2_peak/cycle1_trough - 1), 1)                AS cycle2_recovery_pct,
+    ROUND(cycle3_peak, 0)                                          AS cycle3_peak_hpi,
+    ROUND(current_hpi, 0)                                          AS hpi_2026,
+    ROUND(100.0*(current_hpi/100.0 - 1), 1)                       AS total_gain_since_2000_pct
+FROM cycle_stats
+ORDER BY total_gain_since_2000_pct DESC;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 2: Crash severity ranking — GFC
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    country,
+    MAX(CASE WHEN year <= 2008 THEN hpi END)                       AS pre_crisis_peak,
+    MIN(CASE WHEN year BETWEEN 2009 AND 2013 THEN hpi END)         AS post_crisis_trough,
+    ROUND(100.0 * (
+        MIN(CASE WHEN year BETWEEN 2009 AND 2013 THEN hpi END) /
+        MAX(CASE WHEN year <= 2008 THEN hpi END) - 1
+    ), 1)                                                          AS gfc_drawdown_pct,
+    RANK() OVER (ORDER BY
+        MIN(CASE WHEN year BETWEEN 2009 AND 2013 THEN hpi END) /
+        MAX(CASE WHEN year <= 2008 THEN hpi END)
+    )                                                              AS severity_rank
+FROM global_price_index
+GROUP BY country
+HAVING MAX(CASE WHEN year <= 2008 THEN hpi END) IS NOT NULL
+ORDER BY severity_rank;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 3: Annual leaders & laggards — highest/lowest YoY growth
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    year,
+    MAX(yoy_pct)                                                   AS highest_growth_pct,
+    MIN(yoy_pct)                                                   AS lowest_growth_pct,
+    (SELECT country FROM global_price_index p2
+     WHERE p2.year = p.year AND p2.yoy_pct = MAX(p.yoy_pct))      AS leading_market,
+    (SELECT country FROM global_price_index p3
+     WHERE p3.year = p.year AND p3.yoy_pct = MIN(p.yoy_pct))      AS lagging_market,
+    ROUND(AVG(yoy_pct), 2)                                         AS avg_global_growth
+FROM global_price_index p
+WHERE yoy_pct IS NOT NULL
+GROUP BY year
+ORDER BY year;
+
+
+-- ============================================================
+-- FILE 03: ROMANIA DEEP DIVE
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 1: Romania price growth vs macro correlation
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    year,
+    avg_price_eur_sqm,
+    yoy_price_pct,
+    gdp_growth_pct,
+    cpi_inflation_pct,
+    bnr_rate_pct,
+    mortgage_rate_pct,
+    transactions_k,
+
+    -- Real price growth (nominal minus inflation)
+    ROUND(yoy_price_pct - cpi_inflation_pct, 1)                    AS real_price_growth_pct,
+
+    -- Affordability: months of avg salary to buy 1 sqm
+    -- Avg Romanian net salary 2026: ~€1,050/mo
+    ROUND(avg_price_eur_sqm / 1050.0, 1)                           AS months_salary_per_sqm,
+
+    market_phase
+FROM romania_annual_data
+ORDER BY year;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 2: Romania vs EU average price convergence
+-- How many years until Romania reaches EU average at current pace?
+-- ──────────────────────────────────────────────────────────────
+WITH latest AS (
+    SELECT avg_price_eur_sqm, yoy_price_pct
+    FROM romania_annual_data WHERE year = 2026
+),
+eu_target AS (SELECT 3200 AS eu_avg_eur_sqm)   -- EU average 2026
+SELECT
+    l.avg_price_eur_sqm                        AS romania_current,
+    e.eu_avg_eur_sqm                           AS eu_average,
+    ROUND(e.eu_avg_eur_sqm / l.avg_price_eur_sqm, 2) AS eu_multiple,
+    ROUND(l.yoy_price_pct, 1)                  AS current_growth_pct,
+    -- Years to close gap at current rate (compound)
+    ROUND(
+        LN(e.eu_avg_eur_sqm::NUMERIC / l.avg_price_eur_sqm) /
+        LN(1 + l.yoy_price_pct/100.0)
+    , 1)                                       AS years_to_eu_avg_at_current_rate,
+    -- Conservative scenario (5% annual growth)
+    ROUND(
+        LN(e.eu_avg_eur_sqm::NUMERIC / l.avg_price_eur_sqm) /
+        LN(1.05)
+    , 1)                                       AS years_at_5pct_growth
+FROM latest l, eu_target e;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 3: Romanian cities ranked by investment attractiveness
+-- Composite score: yield + growth + affordability
+-- ──────────────────────────────────────────────────────────────
+WITH scored AS (
+    SELECT
+        city,
+        avg_eur_sqm_2026,
+        yoy_2025_pct,
+        rental_yield_high,
+        price_to_income_yrs,
+        investment_stars,
+        -- Yield score (higher = better, max 10)
+        ROUND(rental_yield_high * 1.1, 1)                          AS yield_score,
+        -- Growth score (higher growth = better)
+        ROUND(yoy_2025_pct / 2.0, 1)                               AS growth_score,
+        -- Affordability score (lower P/I = better, inverted)
+        ROUND((12.0 - price_to_income_yrs) * 1.2, 1)              AS afford_score
+    FROM romania_city_prices
+)
+SELECT
+    city,
+    avg_eur_sqm_2026,
+    yoy_2025_pct                               AS price_growth_pct,
+    rental_yield_high                          AS max_yield_pct,
+    price_to_income_yrs,
+    ROUND(yield_score + growth_score + afford_score, 1) AS composite_score,
+    investment_stars,
+    RANK() OVER (ORDER BY yield_score + growth_score + afford_score DESC) AS investment_rank
+FROM scored
+ORDER BY investment_rank;
+
+
+-- ============================================================
+-- FILE 04: BUCHAREST NEIGHBORHOOD ANALYSIS
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 1: Full neighborhood ranking by investment return
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    sector,
+    neighborhood,
+    zone_type,
+    avg_eur_sqm,
+    monthly_rent_1br,
+    gross_yield_high                           AS max_yield_pct,
+    appreciation_5yr_pct,
+
+    -- Estimated annual total return (yield + appreciation/5)
+    ROUND(gross_yield_high + appreciation_5yr_pct/5.0, 1)          AS est_annual_total_return,
+
+    -- Entry cost for standard 1BR (50sqm)
+    ROUND(avg_eur_sqm * 50, 0)                                     AS entry_cost_1br_eur,
+
+    -- Gross annual rental income on 50sqm
+    ROUND(monthly_rent_1br * 12, 0)                                AS annual_rent_eur,
+
+    -- Gross yield on 50sqm
+    ROUND(100.0 * (monthly_rent_1br * 12) / (avg_eur_sqm * 50), 2) AS calculated_yield_pct,
+
+    metro_access,
+    investment_profile,
+
+    RANK() OVER (ORDER BY
+        gross_yield_high + appreciation_5yr_pct/5.0 DESC
+    )                                                              AS total_return_rank
+FROM bucharest_neighborhoods
+ORDER BY total_return_rank;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 2: Sector-level aggregates
+-- Average prices, yields, and appreciation by sector
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    sector,
+    COUNT(*)                                   AS neighborhoods_count,
+    ROUND(AVG(avg_eur_sqm), 0)                 AS avg_eur_sqm,
+    MIN(avg_eur_sqm)                           AS cheapest_nbhd_sqm,
+    MAX(avg_eur_sqm)                           AS priciest_nbhd_sqm,
+    ROUND(AVG(gross_yield_high), 2)            AS avg_max_yield_pct,
+    ROUND(AVG(appreciation_5yr_pct), 1)        AS avg_5yr_appreciation,
+    ROUND(AVG(monthly_rent_1br), 0)            AS avg_rent_1br_eur,
+    SUM(CASE WHEN metro_access THEN 1 ELSE 0 END) AS metro_served_nbhds
+FROM bucharest_neighborhoods
+GROUP BY sector
+ORDER BY avg_eur_sqm DESC;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 3: Best neighborhoods by budget tier
+-- Match investment budget to best available neighborhoods
+-- ──────────────────────────────────────────────────────────────
+WITH budgets AS (
+    SELECT unnest(ARRAY[80000,120000,180000,300000,500000]) AS budget_eur
+)
+SELECT
+    b.budget_eur,
+    n.sector,
+    n.neighborhood,
+    n.avg_eur_sqm,
+    -- sqm you can afford at this budget (30% down = 70% financed, entry at 30% down)
+    ROUND(b.budget_eur / n.avg_eur_sqm, 0)     AS sqm_at_full_cash,
+    n.gross_yield_high                         AS max_yield_pct,
+    n.appreciation_5yr_pct,
+    n.metro_access,
+    n.investment_profile,
+    RANK() OVER (
+        PARTITION BY b.budget_eur
+        ORDER BY n.gross_yield_high + n.appreciation_5yr_pct/5.0 DESC
+    )                                          AS rank_for_budget
+FROM budgets b
+CROSS JOIN bucharest_neighborhoods n
+WHERE n.avg_eur_sqm * 40 <= b.budget_eur   -- min 40sqm property
+ORDER BY b.budget_eur, rank_for_budget
+LIMIT 30;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 4: Mortgage affordability by neighborhood
+-- ──────────────────────────────────────────────────────────────
+WITH mortgage_params AS (
+    SELECT
+        0.055 AS annual_rate,    -- 5.5% fixed
+        300   AS term_months,    -- 25 years
+        0.30  AS down_pct,       -- 30% down payment
+        0.30  AS dti_max,        -- max 30% of income to mortgage
+        50    AS sqm             -- standard 50sqm apartment
+)
+SELECT
+    n.sector,
+    n.neighborhood,
+    n.avg_eur_sqm,
+    ROUND(n.avg_eur_sqm * p.sqm, 0)           AS property_price_eur,
+    ROUND(n.avg_eur_sqm * p.sqm * p.down_pct, 0) AS down_payment_eur,
+    ROUND(n.avg_eur_sqm * p.sqm * (1 - p.down_pct), 0) AS loan_amount_eur,
+
+    -- Monthly payment (annuity formula)
+    ROUND(
+        n.avg_eur_sqm * p.sqm * (1 - p.down_pct) *
+        (p.annual_rate/12 * POWER(1 + p.annual_rate/12, p.term_months)) /
+        (POWER(1 + p.annual_rate/12, p.term_months) - 1)
+    , 0)                                       AS monthly_payment_eur,
+
+    -- Min net monthly income needed (30% DTI rule)
+    ROUND(
+        n.avg_eur_sqm * p.sqm * (1 - p.down_pct) *
+        (p.annual_rate/12 * POWER(1 + p.annual_rate/12, p.term_months)) /
+        (POWER(1 + p.annual_rate/12, p.term_months) - 1)
+        / p.dti_max
+    , 0)                                       AS min_net_income_eur,
+
+    -- Bucharest avg net salary = ~€1,050/month
+    CASE
+        WHEN (n.avg_eur_sqm * p.sqm * (1 - p.down_pct) *
+             (p.annual_rate/12 * POWER(1 + p.annual_rate/12, p.term_months)) /
+             (POWER(1 + p.annual_rate/12, p.term_months) - 1)
+             / p.dti_max) <= 1050
+        THEN '✅ Accessible on avg salary'
+        WHEN (n.avg_eur_sqm * p.sqm * (1 - p.down_pct) *
+             (p.annual_rate/12 * POWER(1 + p.annual_rate/12, p.term_months)) /
+             (POWER(1 + p.annual_rate/12, p.term_months) - 1)
+             / p.dti_max) <= 2000
+        THEN '⚠️ Requires above-avg salary'
+        ELSE '❌ Above avg Bucharest salary'
+    END                                        AS affordability_verdict
+
+FROM bucharest_neighborhoods n, mortgage_params p
+ORDER BY monthly_payment_eur;
+
+
+-- ============================================================
+-- FILE 05: INTEREST RATE & OUTLOOK ANALYSIS
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 1: Rate cycle analysis — peaks, troughs, duration
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    country,
+    MAX(policy_rate)                           AS cycle_peak_rate,
+    MIN(policy_rate)                           AS cycle_trough_rate,
+    ROUND(MAX(policy_rate) - MIN(policy_rate), 2) AS rate_range_pp,
+    (SELECT year FROM interest_rates r2
+     WHERE r2.country = r.country AND r2.policy_rate = MAX(r.policy_rate)
+     LIMIT 1)                                  AS peak_year,
+    (SELECT year FROM interest_rates r3
+     WHERE r3.country = r.country AND r3.policy_rate = MIN(r.policy_rate)
+     LIMIT 1)                                  AS trough_year,
+    (SELECT policy_rate FROM interest_rates r4
+     WHERE r4.country = r.country AND r4.year = 2026) AS current_2026_rate,
+    (SELECT mortgage_rate FROM interest_rates r5
+     WHERE r5.country = r.country AND r5.year = 2026) AS mortgage_rate_2026
+FROM interest_rates r
+GROUP BY country
+ORDER BY cycle_peak_rate DESC;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 2: Romania rate vs property price correlation
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    r.year,
+    r.bnr_rate_pct,
+    r.mortgage_rate_pct,
+    r.avg_price_eur_sqm,
+    r.yoy_price_pct,
+    r.cpi_inflation_pct,
+
+    -- Real mortgage rate (mortgage rate minus inflation)
+    ROUND(r.mortgage_rate_pct - r.cpi_inflation_pct, 2) AS real_mortgage_rate,
+
+    -- Is price growth inversely correlated with rates?
+    CASE
+        WHEN r.bnr_rate_pct < 3.0 AND r.yoy_price_pct > 8  THEN 'Low rate → High growth ✓'
+        WHEN r.bnr_rate_pct > 5.0 AND r.yoy_price_pct < 8  THEN 'High rate → Low growth ✓'
+        WHEN r.bnr_rate_pct > 5.0 AND r.yoy_price_pct > 10 THEN 'High rate but still growing (supply shortage)'
+        ELSE 'Mixed signal'
+    END                                                    AS rate_price_relationship
+
+FROM romania_annual_data r
+WHERE r.mortgage_rate_pct IS NOT NULL
+ORDER BY r.year;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 3: Scenario projections — Bucharest price 2026–2030
+-- ──────────────────────────────────────────────────────────────
+WITH base AS (
+    SELECT avg_price_eur_sqm FROM romania_annual_data WHERE year = 2026
+)
+SELECT
+    scenario,
+    annual_growth_pct,
+    ROUND(base.avg_price_eur_sqm, 0)           AS price_2026,
+    ROUND(base.avg_price_eur_sqm * POWER(1 + annual_growth_pct/100.0, 1), 0) AS price_2027,
+    ROUND(base.avg_price_eur_sqm * POWER(1 + annual_growth_pct/100.0, 2), 0) AS price_2028,
+    ROUND(base.avg_price_eur_sqm * POWER(1 + annual_growth_pct/100.0, 3), 0) AS price_2029,
+    ROUND(base.avg_price_eur_sqm * POWER(1 + annual_growth_pct/100.0, 4), 0) AS price_2030,
+    probability_pct
+FROM base
+CROSS JOIN (VALUES
+    ('Bull Case — Rate cuts + EU funds',  15.0, 35),
+    ('Base Case — Gradual normalisation',  8.0, 40),
+    ('Bear Case — Fiscal austerity drag',  2.0, 20),
+    ('Crash Scenario — External shock',  -12.0,  5)
+) AS scenarios(scenario, annual_growth_pct, probability_pct)
+ORDER BY annual_growth_pct DESC;
+
+
+-- ──────────────────────────────────────────────────────────────
+-- QUERY 4: Buy vs wait decision framework — weighted score
+-- ──────────────────────────────────────────────────────────────
+SELECT
+    factor,
+    signal,
+    weight,
+    score,
+    ROUND(weight::NUMERIC * score / 5.0, 2)    AS weighted_contribution,
+    notes
+FROM (VALUES
+    ('Supply shortage',          'BUY',  5, 5, 'Permits down 20%+; structural not cyclical'),
+    ('Wage growth',              'BUY',  4, 4, 'Real wages growing; EU convergence'),
+    ('Rental yield 6–9%',        'BUY',  5, 5, '2× EU avg; income covers cost of capital'),
+    ('EU convergence',           'BUY',  5, 5, 'Still 3× below W.Europe; multi-decade upside'),
+    ('EU NRRP €31B',             'BUY',  3, 4, 'Infrastructure investment = appreciation'),
+    ('Mortgage rate 5.55%',      'WAIT', 4, 2, 'Still elevated; rate cuts not arrived yet'),
+    ('Inflation 9.7% CPI',       'WAIT', 4, 2, 'Erodes real purchasing power'),
+    ('Fiscal deficit 9.3% GDP',  'WAIT', 3, 2, 'Austerity risk to confidence'),
+    ('Price momentum +15% YoY',  'MIXED',3, 3, 'FOMO vs risk of overpaying'),
+    ('Earthquake risk',          'RISK', 3, 2, 'Bucharest seismic zone; affects old buildings')
+) AS fw(factor, signal, weight, score, notes)
+ORDER BY weighted_contribution DESC;
